@@ -22,7 +22,7 @@ Personal AI assistant in Telegram, powered by Qwen Code.
 ### One-line install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/a-prs/qwen-bot/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/a-prs/QwenClaw/main/install.sh | sudo bash
 ```
 
 The installer will:
@@ -84,7 +84,7 @@ Edit `/opt/qwenbot/.env`:
 ## Architecture
 
 ```
-GitHub: https://github.com/a-prs/qwen-bot
+GitHub: https://github.com/a-prs/QwenClaw
 
 /opt/qwenbot/
   bot/

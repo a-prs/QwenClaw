@@ -2,10 +2,10 @@
 set -e
 
 # QwenBot Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/a-prs/qwen-bot/main/install.sh | sudo bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/a-prs/QwenClaw/main/install.sh | sudo bash
 
 INSTALL_DIR="/opt/qwenbot"
-REPO_URL="https://github.com/a-prs/qwen-bot.git"
+REPO_URL="https://github.com/a-prs/QwenClaw.git"
 SERVICE_NAME="qwenbot"
 
 # Colors
