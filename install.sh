@@ -184,6 +184,10 @@ fi
 # === Step 9: Fix permissions ===
 chown -R qwenbot:qwenbot "$INSTALL_DIR"
 
+# Allow qwenbot user to restart its own service (for /update command)
+echo "qwenbot ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart qwenbot" > /etc/sudoers.d/qwenbot
+chmod 440 /etc/sudoers.d/qwenbot
+
 # === Step 10: Qwen Code auth ===
 echo ""
 echo "======================================"

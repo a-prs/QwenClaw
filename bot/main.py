@@ -202,6 +202,86 @@ async def cmd_status(message: Message):
     await _send_status(message.chat.id)
 
 
+@dp.message(Command("update"))
+async def cmd_update(message: Message):
+    if not is_admin(message):
+        return
+
+    status_msg = await message.reply("Checking for updates...")
+
+    try:
+        # git fetch and check
+        proc = await asyncio.create_subprocess_exec(
+            "git", "fetch", "origin", "main",
+            cwd=str(config.PROJECT_ROOT),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        await proc.communicate()
+
+        # Check if behind
+        proc = await asyncio.create_subprocess_exec(
+            "git", "rev-list", "--count", "HEAD..origin/main",
+            cwd=str(config.PROJECT_ROOT),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, _ = await proc.communicate()
+        behind = int(stdout.decode().strip() or "0")
+
+        if behind == 0:
+            await status_msg.edit_text("Already up to date.")
+            return
+
+        await status_msg.edit_text(
+            f"Found {behind} new commit(s). Updating...",
+        )
+
+        # git pull
+        proc = await asyncio.create_subprocess_exec(
+            "git", "pull", "origin", "main",
+            cwd=str(config.PROJECT_ROOT),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+
+        if proc.returncode != 0:
+            error = stderr.decode()[:500]
+            await status_msg.edit_text(f"Update failed:\n<pre>{error}</pre>", parse_mode=ParseMode.HTML)
+            return
+
+        # pip install (in case requirements changed)
+        proc = await asyncio.create_subprocess_exec(
+            str(config.PROJECT_ROOT / ".venv" / "bin" / "pip"),
+            "install", "-q", "-r",
+            str(config.PROJECT_ROOT / "bot" / "requirements.txt"),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        await proc.communicate()
+
+        await status_msg.edit_text(
+            f"Updated ({behind} commits). Restarting...",
+        )
+
+        # Restart via systemd
+        proc = await asyncio.create_subprocess_exec(
+            "sudo", "systemctl", "restart", "qwenbot",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        await proc.communicate()
+        # If restart works, bot process dies here and comes back up
+
+    except Exception as e:
+        logger.error(f"Update failed: {e}", exc_info=True)
+        try:
+            await status_msg.edit_text(f"Update error: {e}")
+        except Exception:
+            pass
+
+
 @dp.message(Command("setup"))
 async def cmd_setup(message: Message):
     if not is_admin(message):
@@ -639,6 +719,7 @@ async def setup_bot_commands():
         BotCommand(command="new", description="New session"),
         BotCommand(command="status", description="System status"),
         BotCommand(command="setup", description="Configure voice & settings"),
+        BotCommand(command="update", description="Update bot from GitHub"),
     ]
     await bot.set_my_commands(commands)
 
