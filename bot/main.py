@@ -17,7 +17,8 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.exceptions import TelegramBadRequest
 
-from config import BOT_TOKEN, ADMIN_CHAT_ID, GROQ_API_KEY, MESSAGE_QUEUE_MAX
+import config
+from config import BOT_TOKEN, ADMIN_CHAT_ID, MESSAGE_QUEUE_MAX
 from db import (
     init_db,
     create_session,
@@ -44,6 +45,9 @@ dp = Dispatcher()
 
 # Track which session user is focused on
 user_focus: dict[int, str] = {}  # chat_id -> session_id
+
+# Track pending setup state
+_awaiting_setup: dict[int, str] = {}  # chat_id -> what we're waiting for (e.g. "groq_key")
 
 SESSIONS_PER_PAGE = 5
 
@@ -132,7 +136,7 @@ async def cmd_start(message: Message):
     if not is_admin(message):
         return
 
-    voice_status = "on (Groq)" if GROQ_API_KEY else "off"
+    voice_status = "on (Groq)" if config.GROQ_API_KEY else "off"
     await message.reply(
         f"<b>QwenBot</b> — your personal AI assistant\n\n"
         f"Powered by Qwen Code (1000 free requests/day)\n"
@@ -195,6 +199,55 @@ async def cmd_status(message: Message):
     if not is_admin(message):
         return
     await _send_status(message.chat.id)
+
+
+@dp.message(Command("setup"))
+async def cmd_setup(message: Message):
+    if not is_admin(message):
+        return
+
+    buttons = []
+    if not config.GROQ_API_KEY:
+        buttons.append([InlineKeyboardButton(text="Add Groq API key (voice)", callback_data="setup:groq")])
+    else:
+        buttons.append([InlineKeyboardButton(text="Update Groq API key", callback_data="setup:groq")])
+
+    buttons.append([InlineKeyboardButton(text="Menu", callback_data="menu")])
+
+    voice_status = "on" if config.GROQ_API_KEY else "off"
+    await message.reply(
+        f"<b>Setup</b>\n\nVoice messages: {voice_status}",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons),
+    )
+
+
+@dp.callback_query(F.data == "setup:groq")
+async def cb_setup_groq(callback: CallbackQuery):
+    if not is_admin_cb(callback):
+        return
+    _awaiting_setup[callback.message.chat.id] = "groq_key"
+    await callback.message.edit_text(
+        "<b>Groq API key setup</b>\n\n"
+        "1. Go to https://console.groq.com/keys\n"
+        "2. Create a free API key\n"
+        "3. Send it here\n\n"
+        "The key looks like: <code>gsk_...</code>",
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Cancel", callback_data="setup:cancel")],
+        ]),
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "setup:cancel")
+async def cb_setup_cancel(callback: CallbackQuery):
+    if not is_admin_cb(callback):
+        return
+    _awaiting_setup.pop(callback.message.chat.id, None)
+    await callback.message.edit_text("Setup cancelled.", reply_markup=build_main_menu())
+    await callback.answer()
 
 
 # ==================== Callback handlers ====================
@@ -383,14 +436,34 @@ async def cb_noop(callback: CallbackQuery):
 async def handle_message(message: Message):
     """Main handler: extract text -> route to session -> run Qwen."""
 
+    # 0. Check if we're awaiting setup input
+    setup_state = _awaiting_setup.get(message.chat.id)
+    if setup_state == "groq_key" and message.text:
+        key = message.text.strip()
+        if key.startswith("gsk_") and len(key) > 20:
+            config.set_env_var("GROQ_API_KEY", key)
+            config.reload_groq_key()
+            _awaiting_setup.pop(message.chat.id, None)
+            await message.reply(
+                "Groq API key saved. Voice messages enabled.\n"
+                "Send a voice message to test.",
+                reply_markup=build_main_menu(),
+            )
+        else:
+            await message.reply(
+                "Invalid key. It should start with <code>gsk_</code>\n"
+                "Try again or /setup to cancel.",
+                parse_mode=ParseMode.HTML,
+            )
+        return
+
     # 1. Extract text (plain text, voice, caption)
     text = await extract_text(message)
 
     if text is None and (message.voice or message.audio):
         await message.reply(
-            "Voice messages require GROQ_API_KEY.\n"
-            "Get a free key at https://console.groq.com/keys\n"
-            "Then add it to /opt/qwenbot/.env",
+            "Voice messages require Groq API key.\n"
+            "Run /setup to add it (free, takes 1 minute).",
         )
         return
 
@@ -545,7 +618,7 @@ async def _send_status(chat_id: int, edit_message=None):
     else:
         text += f"Current: <i>none</i>\n"
 
-    voice_status = "on (Groq)" if GROQ_API_KEY else "off"
+    voice_status = "on (Groq)" if config.GROQ_API_KEY else "off"
     text += f"Voice: {voice_status}\n"
     text += f"Busy: {'yes' if is_busy() else 'no'}"
 
@@ -561,6 +634,7 @@ async def setup_bot_commands():
         BotCommand(command="sessions", description="Session list"),
         BotCommand(command="new", description="New session"),
         BotCommand(command="status", description="System status"),
+        BotCommand(command="setup", description="Configure voice & settings"),
     ]
     await bot.set_my_commands(commands)
 

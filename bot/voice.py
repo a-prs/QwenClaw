@@ -6,7 +6,7 @@ from pathlib import Path
 
 import httpx
 
-from config import GROQ_API_KEY
+import config
 
 logger = logging.getLogger("voice")
 
@@ -23,7 +23,7 @@ async def transcribe_voice(voice, bot) -> str | None:
     Returns:
         Transcribed text, error message, or None if not configured
     """
-    if not GROQ_API_KEY:
+    if not config.GROQ_API_KEY:
         return None
 
     tmp_path = None
@@ -38,7 +38,7 @@ async def transcribe_voice(voice, bot) -> str | None:
             with open(tmp_path, "rb") as f:
                 response = await client.post(
                     GROQ_API_URL,
-                    headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+                    headers={"Authorization": f"Bearer {config.GROQ_API_KEY}"},
                     files={"file": (tmp_path.name, f, "audio/ogg")},
                     data={"model": "whisper-large-v3", "language": "ru"},
                 )
