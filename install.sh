@@ -26,8 +26,10 @@ fail()  { echo -e "${RED}[x]${NC} $1"; exit 1; }
 # ============================================================
 if [ ! -t 0 ]; then
     SELF="/tmp/qwenclaw-install.sh"
-    echo -e "${GREEN}[+]${NC} Piped mode detected. Re-downloading for interactive install..."
+    echo "[+] Downloading installer..."
     curl -fsSL "$SELF_URL" -o "$SELF"
+    # Fix Windows line endings if any
+    sed -i 's/\r$//' "$SELF"
     chmod +x "$SELF"
     exec bash "$SELF" "$@"
 fi
