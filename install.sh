@@ -2,6 +2,7 @@
 
 # QwenClaw Installer
 # Usage: curl -fsSL https://raw.githubusercontent.com/a-prs/QwenClaw/main/install.sh -o /tmp/install.sh && sudo bash /tmp/install.sh
+# NOTE: Do NOT pipe (curl|bash) — interactive prompts require terminal stdin
 
 INSTALL_DIR="/opt/qwenbot"
 REPO_URL="https://github.com/a-prs/QwenClaw.git"
@@ -21,20 +22,19 @@ warn()  { echo -e "${YELLOW}[!]${NC} $1"; }
 fail()  { echo -e "${RED}[x]${NC} $1"; exit 1; }
 
 # ============================================================
-#  Self-relaunch: if piped (curl|bash), re-download and re-exec
-#  This fixes: stdin for read, process survives SSH disconnect
+#  Check: must NOT be piped. Stdin must be a terminal for
+#  interactive prompts (read). Tell user the correct command.
 # ============================================================
 if [ ! -t 0 ]; then
-    SELF="/tmp/qwenclaw-install.sh"
-    echo "[+] Downloading installer..."
-    curl -fsSL "$SELF_URL" -o "$SELF"
-    # Fix Windows line endings if any
-    sed -i 's/\r$//' "$SELF"
-    chmod +x "$SELF"
-    exec bash "$SELF" "$@"
+    echo ""
+    echo "  Run this instead (download first, then execute):"
+    echo ""
+    echo "    curl -fsSL $SELF_URL -o /tmp/install.sh && sudo bash /tmp/install.sh"
+    echo ""
+    exit 1
 fi
 
-set -e
+set -eo pipefail
 
 echo ""
 echo -e "${BOLD}======================================${NC}"
@@ -137,6 +137,12 @@ else
         else
             fail "Qwen Code CLI not found after install"
         fi
+    fi
+
+    # Always ensure symlink exists for systemd PATH
+    QWEN_PATH=$(command -v qwen)
+    if [[ "$QWEN_PATH" != "/usr/local/bin/qwen" ]] && [[ -n "$QWEN_PATH" ]]; then
+        ln -sf "$QWEN_PATH" /usr/local/bin/qwen
     fi
     info "Qwen Code CLI installed"
 fi
@@ -271,6 +277,7 @@ TELEGRAM_CHAT_ID=$CHAT_ID
 GROQ_API_KEY=$GROQ_KEY
 ENVEOF
 
+    chmod 600 "$INSTALL_DIR/.env"
     info "Config saved to $INSTALL_DIR/.env"
 fi
 

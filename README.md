@@ -22,11 +22,8 @@ Personal AI assistant in Telegram, powered by Qwen Code.
 ### One-line install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/a-prs/QwenClaw/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/a-prs/QwenClaw/main/install.sh -o /tmp/install.sh && sudo bash /tmp/install.sh
 ```
-
-> The script auto-detects piped execution, saves itself to `/tmp/` and re-launches properly.
-> This ensures interactive prompts work and the process survives SSH disconnects.
 
 The installer will:
 1. Install Node.js, Python, Qwen Code CLI
