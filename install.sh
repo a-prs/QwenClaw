@@ -194,8 +194,18 @@ fi
 # ============================================================
 info "Setting up Python environment..."
 python3 -m venv "$INSTALL_DIR/.venv" || fail "Failed to create Python venv"
-"$INSTALL_DIR/.venv/bin/pip" install --upgrade pip -q
-"$INSTALL_DIR/.venv/bin/pip" install -r "$INSTALL_DIR/bot/requirements.txt" -q || fail "Failed to install Python dependencies"
+
+info "Upgrading pip..."
+"$INSTALL_DIR/.venv/bin/pip" install --upgrade pip 2>&1 | tail -1
+
+info "Installing Python dependencies..."
+"$INSTALL_DIR/.venv/bin/pip" install -r "$INSTALL_DIR/bot/requirements.txt" 2>&1 | tail -5
+PIP_EXIT=${PIPESTATUS[0]}
+if [[ "$PIP_EXIT" -ne 0 ]]; then
+    warn "pip install failed (exit $PIP_EXIT). Retrying with verbose output..."
+    "$INSTALL_DIR/.venv/bin/pip" install -r "$INSTALL_DIR/bot/requirements.txt" -v
+    fail "Failed to install Python dependencies"
+fi
 info "Python environment ready"
 
 
