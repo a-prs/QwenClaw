@@ -68,12 +68,12 @@ def is_admin_cb(callback: CallbackQuery) -> bool:
 def build_main_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="Sessions", callback_data="sessions:0"),
-            InlineKeyboardButton(text="+ New", callback_data="new_session"),
+            InlineKeyboardButton(text="\ud83d\udccb \u0421\u0435\u0441\u0441\u0438\u0438", callback_data="sessions:0"),
+            InlineKeyboardButton(text="\u2795 \u041d\u043e\u0432\u0430\u044f", callback_data="new_session"),
         ],
         [
-            InlineKeyboardButton(text="Status", callback_data="status"),
-            InlineKeyboardButton(text="Close all", callback_data="close_all"),
+            InlineKeyboardButton(text="\ud83d\udcca \u0421\u0442\u0430\u0442\u0443\u0441", callback_data="status"),
+            InlineKeyboardButton(text="\ud83d\uddd1 \u0417\u0430\u043a\u0440\u044b\u0442\u044c \u0432\u0441\u0435", callback_data="close_all"),
         ],
     ])
 
@@ -86,8 +86,8 @@ def build_sessions_keyboard(sessions: list[dict], page: int = 0, focus_id: str =
 
     buttons = []
     for s in page_sessions:
-        icon = {"active": "\u26a1", "idle": "\u25cb"}.get(s["status"], "?")
-        marker = "\u25b6 " if s["session_id"] == focus_id else ""
+        icon = {"active": "\u26a1", "idle": "\ud83d\udca4"}.get(s["status"], "\u2753")
+        marker = "\ud83d\udc49 " if s["session_id"] == focus_id else ""
         name = s["name"][:28] + ".." if len(s["name"]) > 28 else s["name"]
 
         buttons.append([
@@ -95,18 +95,18 @@ def build_sessions_keyboard(sessions: list[dict], page: int = 0, focus_id: str =
                 text=f"{marker}{icon} {name}",
                 callback_data=f'switch:{s["session_id"]}',
             ),
-            InlineKeyboardButton(text="x", callback_data=f'close:{s["session_id"]}'),
+            InlineKeyboardButton(text="\u274c", callback_data=f'close:{s["session_id"]}'),
         ])
 
     nav = []
     if page > 0:
-        nav.append(InlineKeyboardButton(text="< Back", callback_data=f"sessions:{page - 1}"))
+        nav.append(InlineKeyboardButton(text="\u2b05 \u041d\u0430\u0437\u0430\u0434", callback_data=f"sessions:{page - 1}"))
     if end < total:
-        nav.append(InlineKeyboardButton(text="Next >", callback_data=f"sessions:{page + 1}"))
+        nav.append(InlineKeyboardButton(text="\u0412\u043f\u0435\u0440\u0451\u0434 \u27a1", callback_data=f"sessions:{page + 1}"))
     if nav:
         buttons.append(nav)
 
-    buttons.append([InlineKeyboardButton(text="Menu", callback_data="menu")])
+    buttons.append([InlineKeyboardButton(text="\ud83c\udfe0 \u041c\u0435\u043d\u044e", callback_data="menu")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
@@ -137,12 +137,12 @@ async def cmd_start(message: Message):
     if not is_admin(message):
         return
 
-    voice_status = "on (Groq)" if config.GROQ_API_KEY else "off"
+    voice_status = "\u2705 Groq" if config.GROQ_API_KEY else "\u274c /setup"
     await message.reply(
-        f"<b>QwenBot</b> — your personal AI assistant\n\n"
-        f"Powered by Qwen Code (1000 free requests/day)\n"
-        f"Voice: {voice_status}\n\n"
-        f"Just send me a message to start.",
+        f"\ud83e\udd16 <b>QwenClaw</b> \u2014 \u0442\u0432\u043e\u0439 AI-\u0430\u0441\u0441\u0438\u0441\u0442\u0435\u043d\u0442\n\n"
+        f"Qwen Code \u2014 1000 \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u044b\u0445 \u0437\u0430\u043f\u0440\u043e\u0441\u043e\u0432/\u0434\u0435\u043d\u044c\n"
+        f"\ud83c\udf99 \u0413\u043e\u043b\u043e\u0441\u043e\u0432\u044b\u0435: {voice_status}\n\n"
+        f"\u041f\u0440\u043e\u0441\u0442\u043e \u043d\u0430\u043f\u0438\u0448\u0438 \u043c\u043d\u0435.",
         parse_mode=ParseMode.HTML,
         reply_markup=build_main_menu(),
     )
@@ -153,7 +153,7 @@ async def cmd_menu(message: Message):
     if not is_admin(message):
         return
     await message.reply(
-        "<b>Control Panel</b>",
+        "\ud83c\udfae <b>\u041f\u0430\u043d\u0435\u043b\u044c \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f</b>",
         parse_mode=ParseMode.HTML,
         reply_markup=build_main_menu(),
     )
@@ -167,7 +167,7 @@ async def cmd_new(message: Message):
     await message.reply(
         "Send your message — it will start a new session.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Cancel", callback_data="cancel_new")],
+            [InlineKeyboardButton(text="\u274c \u041e\u0442\u043c\u0435\u043d\u0430", callback_data="cancel_new")],
         ]),
     )
 
@@ -181,8 +181,8 @@ async def cmd_sessions(message: Message):
         await message.reply(
             "No active sessions.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="+ New", callback_data="new_session")],
-                [InlineKeyboardButton(text="Menu", callback_data="menu")],
+                [InlineKeyboardButton(text="\u2795 \u041d\u043e\u0432\u0430\u044f", callback_data="new_session")],
+                [InlineKeyboardButton(text="\ud83c\udfe0 \u041c\u0435\u043d\u044e", callback_data="menu")],
             ]),
         )
         return
@@ -289,11 +289,11 @@ async def cmd_setup(message: Message):
 
     buttons = []
     if not config.GROQ_API_KEY:
-        buttons.append([InlineKeyboardButton(text="Add Groq API key (voice)", callback_data="setup:groq")])
+        buttons.append([InlineKeyboardButton(text="\ud83c\udf99 \u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c Groq \u043a\u043b\u044e\u0447 (\u0433\u043e\u043b\u043e\u0441)", callback_data="setup:groq")])
     else:
-        buttons.append([InlineKeyboardButton(text="Update Groq API key", callback_data="setup:groq")])
+        buttons.append([InlineKeyboardButton(text="\ud83d\udd04 \u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c Groq \u043a\u043b\u044e\u0447", callback_data="setup:groq")])
 
-    buttons.append([InlineKeyboardButton(text="Menu", callback_data="menu")])
+    buttons.append([InlineKeyboardButton(text="\ud83c\udfe0 \u041c\u0435\u043d\u044e", callback_data="menu")])
 
     voice_status = "on" if config.GROQ_API_KEY else "off"
     await message.reply(
@@ -316,7 +316,7 @@ async def cb_setup_groq(callback: CallbackQuery):
         "The key looks like: <code>gsk_...</code>",
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Cancel", callback_data="setup:cancel")],
+            [InlineKeyboardButton(text="\u274c \u041e\u0442\u043c\u0435\u043d\u0430", callback_data="setup:cancel")],
         ]),
     )
     await callback.answer()
@@ -356,8 +356,8 @@ async def cb_sessions(callback: CallbackQuery):
         await callback.message.edit_text(
             "No active sessions.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="+ New", callback_data="new_session")],
-                [InlineKeyboardButton(text="Menu", callback_data="menu")],
+                [InlineKeyboardButton(text="\u2795 \u041d\u043e\u0432\u0430\u044f", callback_data="new_session")],
+                [InlineKeyboardButton(text="\ud83c\udfe0 \u041c\u0435\u043d\u044e", callback_data="menu")],
             ]),
         )
         await callback.answer()
@@ -394,8 +394,8 @@ async def cb_switch(callback: CallbackQuery):
         f"Switched. Send a message to continue.",
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Sessions", callback_data="sessions:0")],
-            [InlineKeyboardButton(text="Menu", callback_data="menu")],
+            [InlineKeyboardButton(text="\ud83d\udccb \u0421\u0435\u0441\u0441\u0438\u0438", callback_data="sessions:0")],
+            [InlineKeyboardButton(text="\ud83c\udfe0 \u041c\u0435\u043d\u044e", callback_data="menu")],
         ]),
     )
     await callback.answer(f"Session: {session['name'][:30]}")
@@ -431,8 +431,8 @@ async def cb_close(callback: CallbackQuery):
         await callback.message.edit_text(
             f"Closed: {session['name']}\nNo more active sessions.",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="+ New", callback_data="new_session")],
-                [InlineKeyboardButton(text="Menu", callback_data="menu")],
+                [InlineKeyboardButton(text="\u2795 \u041d\u043e\u0432\u0430\u044f", callback_data="new_session")],
+                [InlineKeyboardButton(text="\ud83c\udfe0 \u041c\u0435\u043d\u044e", callback_data="menu")],
             ]),
         )
 
@@ -445,7 +445,7 @@ async def cb_new_session(callback: CallbackQuery):
     await callback.message.edit_text(
         "Send your first message — it becomes the session name.",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Cancel", callback_data="cancel_new")],
+            [InlineKeyboardButton(text="\u274c \u041e\u0442\u043c\u0435\u043d\u0430", callback_data="cancel_new")],
         ]),
     )
     await callback.answer()
@@ -474,8 +474,8 @@ async def cb_close_all(callback: CallbackQuery):
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [
-                InlineKeyboardButton(text="Yes, close all", callback_data="confirm_close_all"),
-                InlineKeyboardButton(text="Cancel", callback_data="menu"),
+                InlineKeyboardButton(text="\u2705 \u0414\u0430, \u0437\u0430\u043a\u0440\u044b\u0442\u044c", callback_data="confirm_close_all"),
+                InlineKeyboardButton(text="\u274c \u041e\u0442\u043c\u0435\u043d\u0430", callback_data="menu"),
             ],
         ]),
     )
@@ -594,7 +594,7 @@ async def handle_message(message: Message):
         status_text,
         parse_mode=ParseMode.HTML,
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Working...", callback_data="noop")],
+            [InlineKeyboardButton(text="\u23f3 \u0420\u0430\u0431\u043e\u0442\u0430\u044e...", callback_data="noop")],
         ]),
     )
 
@@ -621,42 +621,37 @@ async def handle_message(message: Message):
         except TelegramBadRequest:
             pass
 
-        # Send result
+        # Send result — text WITHOUT buttons
         if result_text:
             html = md_to_telegram_html(result_text)
             chunks = split_message(html)
 
             for i, chunk in enumerate(chunks):
-                reply_markup = None
-                if i == len(chunks) - 1:
-                    reply_markup = InlineKeyboardMarkup(inline_keyboard=[
-                        [
-                            InlineKeyboardButton(text="Sessions", callback_data="sessions:0"),
-                            InlineKeyboardButton(text="+ New", callback_data="new_session"),
-                        ],
-                    ])
-
                 try:
                     await bot.send_message(
                         ADMIN_CHAT_ID,
                         chunk,
                         parse_mode=ParseMode.HTML,
-                        reply_markup=reply_markup,
                     )
                 except TelegramBadRequest as e:
                     logger.warning(f"HTML parse failed, sending as plain text: {e}")
                     await bot.send_message(
                         ADMIN_CHAT_ID,
                         result_text[:4000] if i == 0 else chunk[:4000],
-                        reply_markup=reply_markup,
                     )
                     break
-        else:
-            await bot.send_message(
-                ADMIN_CHAT_ID,
-                "Done (no text response).",
-                reply_markup=build_main_menu(),
-            )
+
+        # Send separate control message with buttons (never replaces the answer)
+        await bot.send_message(
+            ADMIN_CHAT_ID,
+            "\u2022\u2022\u2022",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="\ud83d\udccb \u0421\u0435\u0441\u0441\u0438\u0438", callback_data="sessions:0"),
+                    InlineKeyboardButton(text="\u2795 \u041d\u043e\u0432\u0430\u044f", callback_data="new_session"),
+                ],
+            ]),
+        )
 
     result = await run_qwen(
         prompt=text,
@@ -714,12 +709,12 @@ async def _send_status(chat_id: int, edit_message=None):
 
 async def setup_bot_commands():
     commands = [
-        BotCommand(command="menu", description="Control panel"),
-        BotCommand(command="sessions", description="Session list"),
-        BotCommand(command="new", description="New session"),
-        BotCommand(command="status", description="System status"),
-        BotCommand(command="setup", description="Configure voice & settings"),
-        BotCommand(command="update", description="Update bot from GitHub"),
+        BotCommand(command="menu", description="\ud83c\udfae \u041f\u0430\u043d\u0435\u043b\u044c \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f"),
+        BotCommand(command="sessions", description="\ud83d\udccb \u0421\u043f\u0438\u0441\u043e\u043a \u0441\u0435\u0441\u0441\u0438\u0439"),
+        BotCommand(command="new", description="\u2795 \u041d\u043e\u0432\u0430\u044f \u0441\u0435\u0441\u0441\u0438\u044f"),
+        BotCommand(command="status", description="\ud83d\udcca \u0421\u0442\u0430\u0442\u0443\u0441 \u0441\u0438\u0441\u0442\u0435\u043c\u044b"),
+        BotCommand(command="setup", description="\u2699\ufe0f \u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438"),
+        BotCommand(command="update", description="\ud83d\udd04 \u041e\u0431\u043d\u043e\u0432\u0438\u0442\u044c \u0431\u043e\u0442\u0430"),
     ]
     await bot.set_my_commands(commands)
 
