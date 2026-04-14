@@ -301,17 +301,32 @@ echo -e "${BOLD}======================================${NC}"
 echo -e "${BOLD}    Qwen Code Authorization${NC}"
 echo -e "${BOLD}======================================${NC}"
 echo ""
-echo "  A link will appear below."
-echo "  Open it in your browser and authorize."
+echo "  A link will appear below — open it in YOUR browser."
+echo "  DO NOT close this terminal while authorizing."
 echo ""
 echo "  If this is your first time:"
-echo "    1. The link will ask you to register/login at Qwen"
-echo "    2. After login, come back and run auth again"
+echo "    1. Register/login at Qwen website first"
+echo "    2. Then come back and authorize again"
+echo ""
+echo "  If it hangs for more than 2 minutes — press Ctrl+C,"
+echo "  then run manually: sudo -u qwenbot qwen auth qwen-oauth"
 echo ""
 read -p "  Press Enter to start authorization..."
 
+# Run auth with:
+# - BROWSER=echo: prevent xdg-open from hanging on headless VPS
+# - HOME set explicitly: ensure qwen finds/creates config in right place
+# - timeout 120s: don't hang forever if OAuth callback never arrives
+_run_qwen_auth() {
+    sudo -u qwenbot \
+        HOME="$INSTALL_DIR" \
+        BROWSER=echo \
+        PATH="/usr/local/bin:/usr/bin:/bin:$PATH" \
+        timeout 120 qwen auth qwen-oauth
+}
+
 echo ""
-sudo -u qwenbot bash -c 'export PATH="/usr/local/bin:/usr/bin:$PATH" && qwen auth qwen-oauth' || true
+_run_qwen_auth || true
 
 echo ""
 read -p "  Authorization OK? (y = yes / Enter = try again): " auth_ok
@@ -319,12 +334,13 @@ read -p "  Authorization OK? (y = yes / Enter = try again): " auth_ok
 if [[ "$auth_ok" != "y" && "$auth_ok" != "Y" ]]; then
     info "Trying again..."
     echo ""
-    sudo -u qwenbot bash -c 'export PATH="/usr/local/bin:/usr/bin:$PATH" && qwen auth qwen-oauth' || true
+    _run_qwen_auth || true
 
     echo ""
     read -p "  Now? (y/n): " auth_ok2
     if [[ "$auth_ok2" != "y" && "$auth_ok2" != "Y" ]]; then
-        warn "You can authorize later: sudo -u qwenbot qwen auth login"
+        warn "You can authorize later:"
+        echo "  sudo -u qwenbot HOME=$INSTALL_DIR qwen auth qwen-oauth"
     fi
 fi
 
