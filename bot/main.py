@@ -540,24 +540,28 @@ async def handle_message(message: Message):
 
     # 0. Check if we're awaiting setup input
     setup_state = _awaiting_setup.get(message.chat.id)
-    if setup_state == "groq_key" and message.text:
-        key = message.text.strip()
-        if key.startswith("gsk_") and len(key) > 20:
-            config.set_env_var("GROQ_API_KEY", key)
-            config.reload_groq_key()
+    if setup_state == "groq_key":
+        if not message.text:
             _awaiting_setup.pop(message.chat.id, None)
-            await message.reply(
-                "Groq API key saved. Voice messages enabled.\n"
-                "Send a voice message to test.",
-                reply_markup=build_main_menu(),
-            )
         else:
-            await message.reply(
-                "Invalid key. It should start with <code>gsk_</code>\n"
-                "Try again or /setup to cancel.",
-                parse_mode=ParseMode.HTML,
-            )
-        return
+            key = message.text.strip()
+            if key.startswith("gsk_") and len(key) > 20:
+                config.set_env_var("GROQ_API_KEY", key)
+                config.reload_groq_key()
+                _awaiting_setup.pop(message.chat.id, None)
+                await message.reply(
+                    "\u2705 Groq \u043a\u043b\u044e\u0447 \u0441\u043e\u0445\u0440\u0430\u043d\u0451\u043d. \u0413\u043e\u043b\u043e\u0441\u043e\u0432\u044b\u0435 \u0432\u043a\u043b\u044e\u0447\u0435\u043d\u044b.",
+                    reply_markup=build_main_menu(),
+                )
+            elif key.startswith("/"):
+                _awaiting_setup.pop(message.chat.id, None)
+            else:
+                await message.reply(
+                    "\u274c \u041a\u043b\u044e\u0447 \u043d\u0430\u0447\u0438\u043d\u0430\u0435\u0442\u0441\u044f \u0441 <code>gsk_</code>\n"
+                    "\u041e\u0442\u043f\u0440\u0430\u0432\u044c \u043a\u043b\u044e\u0447 \u0438\u043b\u0438 \u043b\u044e\u0431\u043e\u0435 \u0441\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0434\u043b\u044f \u043e\u0442\u043c\u0435\u043d\u044b.",
+                    parse_mode=ParseMode.HTML,
+                )
+            return
 
     # 1. Extract text and optional image
     text, image_path = await extract_text(message)
