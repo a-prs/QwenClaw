@@ -1,3 +1,8 @@
+# N.B.!!!
+
+Qwen coder via CLI is done with free tiers since 15.04.2026
+Check out [new version](https://github.com/a-prs/CliClaw) - CliClaw , more flexible, with long-term memory and cron-jobs
+
 # QwenBot
 
 Personal AI assistant in Telegram, powered by Qwen Code.
